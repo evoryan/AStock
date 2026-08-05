@@ -48,7 +48,7 @@ jobs:
       - name: Build Debug & Release APK
         env:
           KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
