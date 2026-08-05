@@ -34,14 +34,13 @@ jobs:
             touch .env
           fi
 
-      - name: Generate Gradle Wrapper (if missing)
+      - name: Ensure Valid Gradle Wrapper
         run: |
-          if [ ! -f gradlew ]; then
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "Gradle wrapper JAR is missing or corrupt. Regenerating wrapper..."
             gradle wrapper --gradle-version 8.10.2
-            chmod +x gradlew
-          else
-            chmod +x gradlew
           fi
+          chmod +x gradlew
 
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --continue || echo "Tests finished"
