@@ -38,7 +38,7 @@ jobs:
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || ! jar tf gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
             echo "Gradle wrapper JAR is missing or corrupt. Regenerating wrapper..."
-            gradle wrapper --gradle-version 8.10.2
+            gradle wrapper --gradle-version 8.11.1
           fi
           chmod +x gradlew
 
