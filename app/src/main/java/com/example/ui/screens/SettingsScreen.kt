@@ -1782,22 +1782,17 @@ fun SettingsScreen(
                                     Button(
                                         onClick = {
                                             isUpdatingFix = true
-                                            updateFixProgressText = "Menghubungkan ke GitHub repository..."
+                                            updateFixProgressText = "Menyiapkan proses unduhan latar belakang..."
                                             coroutineScope.launch {
-                                                kotlinx.coroutines.delay(800)
-                                                updateFixProgressText = "Mengunduh paket APK v1.2 (Update-Fix)..."
-                                                kotlinx.coroutines.delay(1200)
-                                                updateFixProgressText = "Membuka installer APK untuk instalasi ulang..."
-                                                kotlinx.coroutines.delay(600)
+                                                val result = com.example.util.UpdateInstaller.downloadAndInstallApk(
+                                                    context = context,
+                                                    downloadUrl = "https://github.com/satriaevo77/AStock/releases/latest/download/app-release.apk",
+                                                    onProgress = { progressStr ->
+                                                        updateFixProgressText = progressStr
+                                                    }
+                                                )
                                                 isUpdatingFix = false
-                                                updateCheckedMessage = "✓ Berkas APK v1.2 (Update-Fix) berhasil diunduh. Installer aplikasi dibuka."
-                                                try {
-                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/satriaevo77/AStock/releases/latest"))
-                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                    context.startActivity(intent)
-                                                } catch (e: Exception) {
-                                                    // Fallback in non-Android browser environments
-                                                }
+                                                updateCheckedMessage = result.second
                                             }
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
