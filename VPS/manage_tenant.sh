@@ -183,8 +183,9 @@ add_tenant() {
       \`id\` INT AUTO_INCREMENT PRIMARY KEY,
       \`username\` VARCHAR(50) NOT NULL UNIQUE,
       \`password\` VARCHAR(100) NOT NULL,
-      \`role\` VARCHAR(50) DEFAULT 'Kasir',
+      \`role\` VARCHAR(50) NOT NULL DEFAULT 'Superadmin',
       \`name\` VARCHAR(100) NOT NULL,
+      \`area\` VARCHAR(100) NOT NULL DEFAULT 'Semua Cabang',
       \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -196,16 +197,23 @@ add_tenant() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     INSERT INTO \`modal_awal\` (\`id\`, \`modal_awal\`, \`online_income\`) VALUES (1, 0.00, 0.00) ON DUPLICATE KEY UPDATE \`id\`=1;
+
+    INSERT INTO \`areas\` (\`id\`, \`area_name\`, \`description\`) VALUES (1, 'Cabang Utama', 'Pusat / Cabang Utama') ON DUPLICATE KEY UPDATE \`id\`=\`id\`;
+
+    INSERT INTO \`admins\` (\`username\`, \`password\`, \`role\`, \`name\`, \`area\`) 
+    VALUES ('$USERNAME', '$PASSWORD', 'Superadmin', '$TENANT_NAME Superadmin', 'Semua Cabang')
+    ON DUPLICATE KEY UPDATE \`role\`='Superadmin', \`password\`='$PASSWORD';
     "
 
     mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -e "$SCHEMA_SQL" 2>/dev/null
 
     if [ $? -eq 0 ]; then
-        echo -e "\n${GREEN}${BOLD}✔ SUKSES! Tenant '$TENANT_NAME' berhasil dibuat.${NC}"
-        echo -e "${CYAN}Detail Login:${NC}"
-        echo -e " - Username  : ${BOLD}$USERNAME${NC}"
-        echo -e " - Password  : ${BOLD}$PASSWORD${NC}"
-        echo -e " - Database  : ${BOLD}$DB_NAME${NC}"
+        echo -e "\n${GREEN}${BOLD}✔ SUKSES! Tenant '$TENANT_NAME' & Akun Superadmin berhasil dibuat.${NC}"
+        echo -e "${CYAN}Detail Login Superadmin Tenant:${NC}"
+        echo -e " - Username Superadmin : ${BOLD}$USERNAME${NC}"
+        echo -e " - Password Superadmin : ${BOLD}$PASSWORD${NC}"
+        echo -e " - Role Hak Akses      : ${BOLD}Superadmin (Kontrol Penuh Database Tenant)${NC}"
+        echo -e " - Database Tenant     : ${BOLD}$DB_NAME${NC}"
     else
         echo -e "${RED}[ERROR] Gagal membuat skema database '$DB_NAME'!${NC}"
     fi

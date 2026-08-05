@@ -121,7 +121,7 @@ function createAdminsAreasRouter(getTenantConnectionPool) {
             const pool = getTenantConnectionPool(db_name);
             const [result] = await pool.query(
                 'INSERT INTO admins (name, username, password, role, area) VALUES (?, ?, ?, ?, ?)',
-                [name.trim(), username.trim(), password, role || 'Kasir', area || 'Semua Cabang']
+                [name.trim(), username.trim(), password, role || 'Superadmin', area || 'Semua Cabang']
             );
             res.status(201).json({
                 success: true,

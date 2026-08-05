@@ -14,7 +14,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -271,6 +273,9 @@ fun PembukuanScreen(
     // Sisa Uang di Toko = Modal Awal + Cash Income + Other Income - Total Expense
     val sisaUangToko = modalAwal + cashIncome + otherIncome - totalExpense
 
+    // Confirmation Message State
+    var pembukuanConfirmationMessage by remember { mutableStateOf<String?>(null) }
+
     // Dialog States
     var showAddModalAwalDialog by remember { mutableStateOf(false) }
     var showAddIncomeDialog by remember { mutableStateOf(false) }
@@ -334,6 +339,44 @@ fun PembukuanScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Confirmation Message Banner
+            if (pembukuanConfirmationMessage != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF10B981).copy(alpha = 0.15f)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = pembukuanConfirmationMessage ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { pembukuanConfirmationMessage = null }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color.LightGray,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             // FILTER SECTION: TANGGAL, BULAN, TAHUN (Di Paling Atas)
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -1022,6 +1065,7 @@ fun PembukuanScreen(
                             val updatedExpenses = expenseList + modalExpense
                             expenseList = updatedExpenses
                             saveExpenses(sharedPrefs, updatedExpenses)
+                            pembukuanConfirmationMessage = "✓ Modal Awal berhasil diperbarui: ${formatRupiah(amount)}"
                         }
                         showAddModalAwalDialog = false
                     },
@@ -1099,6 +1143,7 @@ fun PembukuanScreen(
                             val updatedList = incomeList + newItem
                             incomeList = updatedList
                             saveIncomes(sharedPrefs, updatedList)
+                            pembukuanConfirmationMessage = "✓ Pemasukkan berhasil ditambahkan: ${formatRupiah(amount)}"
                         }
                         showAddIncomeDialog = false
                     },
@@ -1222,6 +1267,7 @@ fun PembukuanScreen(
                             val updatedList = expenseList + newItem
                             expenseList = updatedList
                             saveExpenses(sharedPrefs, updatedList)
+                            pembukuanConfirmationMessage = "✓ Pengeluaran ($newExpenseCategory) berhasil ditambahkan: ${formatRupiah(amount)}"
                         }
                         showAddExpenseDialog = false
                     },
@@ -1338,6 +1384,7 @@ fun PembukuanScreen(
                                                     val updated = incomeList.filter { it.id != item.id }
                                                     incomeList = updated
                                                     saveIncomes(sharedPrefs, updated)
+                                                    pembukuanConfirmationMessage = "✓ Catatan pemasukkan berhasil dihapus!"
                                                 },
                                                 modifier = Modifier.size(24.dp)
                                             ) {
@@ -1472,6 +1519,7 @@ fun PembukuanScreen(
                                                     val updated = expenseList.filter { it.id != item.id }
                                                     expenseList = updated
                                                     saveExpenses(sharedPrefs, updated)
+                                                    pembukuanConfirmationMessage = "✓ Catatan pengeluaran berhasil dihapus!"
                                                 },
                                                 modifier = Modifier.size(24.dp)
                                             ) {

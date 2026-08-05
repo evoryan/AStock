@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `admins` (
   `name` VARCHAR(100) NOT NULL,
   `username` VARCHAR(50) NOT NULL UNIQUE,
   `password` VARCHAR(100) NOT NULL,
-  `role` VARCHAR(50) NOT NULL DEFAULT 'Kasir', -- Values: 'Admin', 'Kasir', 'Mitra'
+  `role` VARCHAR(50) NOT NULL DEFAULT 'Superadmin', -- Values: 'Superadmin', 'Admin', 'Kasir', 'Mitra'
   `area` VARCHAR(100) NOT NULL DEFAULT 'Semua Cabang',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -28,6 +28,7 @@ INSERT IGNORE INTO `areas` (`id`, `name`) VALUES
 
 -- 4. Seed initial sample data for Admins/Multi-role users
 INSERT IGNORE INTO `admins` (`id`, `name`, `username`, `password`, `role`, `area`) VALUES
-(1, 'Miftah Hidayat', 'miftah_admin', 'admin123', 'Admin', 'Semua Cabang'),
-(2, 'Rina Lestari', 'rina_kasir', 'kasir123', 'Kasir', 'Cabang Jakarta Selatan'),
-(3, 'Joko Susilo', 'joko_mitra', 'mitra123', 'Mitra', 'Cabang Surabaya Barat');
+(1, 'Superadmin Tenant', 'superadmin', 'super123', 'Superadmin', 'Semua Cabang'),
+(2, 'Miftah Hidayat', 'miftah_admin', 'admin123', 'Admin', 'Semua Cabang'),
+(3, 'Rina Lestari', 'rina_kasir', 'kasir123', 'Kasir', 'Cabang Jakarta Selatan'),
+(4, 'Joko Susilo', 'joko_mitra', 'mitra123', 'Mitra', 'Cabang Surabaya Barat');

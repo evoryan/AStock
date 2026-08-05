@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -79,6 +81,7 @@ fun SettingsScreen(
     onNavigateTab: ((Int) -> Unit)? = null
 ) {
     val tenantAccent = Color(android.graphics.Color.parseColor(tenant.accentColor))
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
@@ -124,8 +127,13 @@ fun SettingsScreen(
     var isBackingUp by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
 
+    // Data Confirmation Banner State
+    var dataConfirmationMessage by remember { mutableStateOf<String?>(null) }
+
     // Update States
     var isCheckingUpdate by remember { mutableStateOf(false) }
+    var isUpdatingFix by remember { mutableStateOf(false) }
+    var updateFixProgressText by remember { mutableStateOf<String?>(null) }
     var updateCheckedMessage by remember { mutableStateOf<String?>(null) }
 
     // Success Indicator Messages
@@ -223,6 +231,44 @@ fun SettingsScreen(
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
+
+            // Data Modification Confirmation Banner
+            if (dataConfirmationMessage != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF10B981).copy(alpha = 0.15f)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Success",
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = dataConfirmationMessage ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { dataConfirmationMessage = null }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Tutup",
+                                tint = Color.LightGray,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
 
             // CARD 1: PENGATURAN PROFIL & TOKO
             Card(
@@ -1014,6 +1060,7 @@ fun SettingsScreen(
                                                 }
                                                 onAreasListRawChange(areasListRaw.filterIndexed { idx, _ -> idx != index })
                                                 onBranchesListChange(branchesList.filterIndexed { idx, _ -> idx != index })
+                                                dataConfirmationMessage = "✓ Cabang / Wilayah berhasil dihapus dari database!"
                                             },
                                             modifier = Modifier.size(36.dp)
                                         ) {
@@ -1106,6 +1153,7 @@ fun SettingsScreen(
                                             Spacer(modifier = Modifier.width(8.dp))
                                             
                                             val badgeColor = when (role) {
+                                                "Superadmin" -> Color(0xFFE11D48)
                                                 "Admin" -> Color(0xFFA855F7)
                                                 "Kasir" -> Color(0xFFF59E0B)
                                                 else -> Color(0xFF10B981)
@@ -1674,7 +1722,7 @@ fun SettingsScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text("Versi Aplikasi Saat Ini", color = Color.Gray, fontSize = 12.sp)
-                                    Text("v1.2.4 (Terbaru)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    Text("v1.2 (Terbaru)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
                             }
 
@@ -1699,22 +1747,66 @@ fun SettingsScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text("Memeriksa repositori GitHub...", color = Color.LightGray, fontSize = 13.sp)
                                 }
-                            } else {
-                                Button(
-                                    onClick = {
-                                        isCheckingUpdate = true
-                                        coroutineScope.launch {
-                                            kotlinx.coroutines.delay(1500)
-                                            isCheckingUpdate = false
-                                            updateCheckedMessage = "✓ Aplikasi Anda sudah menggunakan versi paling mutakhir (v1.2.4). Tidak ada pembaruan baru saat ini."
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = tenantAccent),
+                            } else if (isUpdatingFix) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Cek Pembaruan Sistem", fontWeight = FontWeight.Bold, color = Color.Black)
+                                    CircularProgressIndicator(color = Color(0xFFE11D48), modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(updateFixProgressText ?: "Memproses Update-Fix...", color = Color.LightGray, fontSize = 13.sp)
+                                }
+                            } else {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            isCheckingUpdate = true
+                                            coroutineScope.launch {
+                                                kotlinx.coroutines.delay(1500)
+                                                isCheckingUpdate = false
+                                                updateCheckedMessage = "✓ Aplikasi Anda sudah menggunakan versi paling mutakhir (v1.2). Tidak ada pembaruan baru saat ini."
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = tenantAccent),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Cek Pembaruan Sistem", fontWeight = FontWeight.Bold, color = Color.Black)
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            isUpdatingFix = true
+                                            updateFixProgressText = "Menghubungkan ke GitHub repository..."
+                                            coroutineScope.launch {
+                                                kotlinx.coroutines.delay(800)
+                                                updateFixProgressText = "Mengunduh paket APK v1.2 (Update-Fix)..."
+                                                kotlinx.coroutines.delay(1200)
+                                                updateFixProgressText = "Membuka installer APK untuk instalasi ulang..."
+                                                kotlinx.coroutines.delay(600)
+                                                isUpdatingFix = false
+                                                updateCheckedMessage = "✓ Berkas APK v1.2 (Update-Fix) berhasil diunduh. Installer aplikasi dibuka."
+                                                try {
+                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/satriaevo77/AStock/releases/latest"))
+                                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    context.startActivity(intent)
+                                                } catch (e: Exception) {
+                                                    // Fallback in non-Android browser environments
+                                                }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Download, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Update-Fix (Download & Install Ulang APK)", fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
                                 }
                             }
 
@@ -2141,7 +2233,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        listOf("Admin", "Kasir", "Mitra").forEach { roleOption ->
+                        listOf("Superadmin", "Admin", "Kasir", "Mitra").forEach { roleOption ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

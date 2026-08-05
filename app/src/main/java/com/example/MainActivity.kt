@@ -49,6 +49,9 @@ class MainActivity : ComponentActivity() {
                 var isRealVps by remember { mutableStateOf(false) }
                 var vpsUrl by remember { mutableStateOf("") }
 
+                // Room Database for local persistence and tenant data isolation
+                val appDb = remember { com.example.data.AppRoomDatabase.getDatabase(this@MainActivity) }
+
                 // Lifted Settings States for synchronization
                 var storeNameState by remember { mutableStateOf("") }
                 var storeAddressState by remember { mutableStateOf("Jl. Telekomunikasi No. 1, Bandung") }
@@ -67,9 +70,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 var categoriesList by remember {
-                    val sharedPrefs = this@MainActivity.getSharedPreferences("app_session", android.content.Context.MODE_PRIVATE)
-                    val savedCategories = sharedPrefs.getStringSet("categories_list", null)?.toList()
-                    mutableStateOf(savedCategories ?: listOf("HP", "Aksesoris"))
+                    mutableStateOf(listOf("HP", "Aksesoris"))
                 }
                 var areasListRaw by remember { mutableStateOf<List<com.example.data.AreaResponse>>(emptyList()) }
 
@@ -89,9 +90,63 @@ class MainActivity : ComponentActivity() {
 
                 val coroutineScope = rememberCoroutineScope()
 
+                // Complete Logout & Clean-Up Function to Isolate Tenant Data
+                fun performLogout() {
+                    val sharedPrefs = this@MainActivity.getSharedPreferences("app_session", android.content.Context.MODE_PRIVATE)
+                    sharedPrefs.edit().clear().apply()
+
+                    // Reset all tenant memory state variables to avoid data leaking between sessions
+                    loggedInTenant = null
+                    globalProductsList = emptyList()
+                    globalTransactionsList = emptyList()
+                    storeNameState = ""
+                    adminNameState = ""
+                    branchesList = emptyList()
+                    areasListRaw = emptyList()
+                    adminUsers = emptyList()
+                    categoriesList = listOf("HP", "Aksesoris")
+                    selectedDashboardTab = 1
+                    currentScreen = AppScreen.Login
+                }
+
                 fun fetchGlobalData() {
                     loggedInTenant?.let { tenant ->
                         coroutineScope.launch {
+                            // 1. Load instantly from local Room DB (Tenant Isolated)
+                            try {
+                                val localProducts = appDb.tenantDataDao().getProductsListByTenant(tenant.dbName)
+                                if (localProducts.isNotEmpty()) {
+                                    globalProductsList = localProducts.map { p ->
+                                        Product(
+                                            id = p.id,
+                                            name = p.name,
+                                            sku = p.sku,
+                                            category = p.category,
+                                            price = p.price,
+                                            stock = p.stock,
+                                            minStockAlert = p.minStockAlert
+                                        )
+                                    }
+                                }
+                                val localTx = appDb.tenantDataDao().getTransactionsListByTenant(tenant.dbName)
+                                if (localTx.isNotEmpty()) {
+                                    globalTransactionsList = localTx.map { t ->
+                                        SalesTransaction(
+                                            id = t.id,
+                                            productName = t.productName,
+                                            sku = t.sku,
+                                            quantity = t.quantity,
+                                            totalPrice = t.totalPrice,
+                                            timestamp = t.timestamp,
+                                            operator = t.operator
+                                        )
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+
+                            // 2. Fetch remote VPS API & update Room DB Cache
                             try {
                                 val pList = com.example.data.ApiClient.getService().getProducts(tenant.dbName)
                                 globalProductsList = pList.map { p ->
@@ -105,8 +160,22 @@ class MainActivity : ComponentActivity() {
                                         minStockAlert = p.minStockAlert
                                     )
                                 }
+                                val productEntities = pList.map { p ->
+                                    com.example.data.LocalProductEntity(
+                                        tenantDbName = tenant.dbName,
+                                        id = p.id,
+                                        name = p.name,
+                                        sku = p.sku,
+                                        category = p.category,
+                                        price = p.price,
+                                        stock = p.stock,
+                                        minStockAlert = p.minStockAlert
+                                    )
+                                }
+                                appDb.tenantDataDao().clearProductsByTenant(tenant.dbName)
+                                appDb.tenantDataDao().insertProducts(productEntities)
                             } catch (e: Exception) {
-                                // keep current products
+                                // keep Room DB local data
                             }
 
                             try {
@@ -127,27 +196,54 @@ class MainActivity : ComponentActivity() {
                                         operator = t.operator
                                     )
                                 }
+                                val txEntities = globalTransactionsList.map { t ->
+                                    com.example.data.LocalTransactionEntity(
+                                        tenantDbName = tenant.dbName,
+                                        id = t.id,
+                                        productName = t.productName,
+                                        sku = t.sku,
+                                        quantity = t.quantity,
+                                        totalPrice = t.totalPrice,
+                                        timestamp = t.timestamp,
+                                        operator = t.operator
+                                    )
+                                }
+                                appDb.tenantDataDao().clearTransactionsByTenant(tenant.dbName)
+                                appDb.tenantDataDao().insertTransactions(txEntities)
                             } catch (e: Exception) {
-                                // keep current transactions
+                                // keep Room DB local data
                             }
                         }
                     }
                 }
 
-                // In Login success, set the tenant name and owner name
+                // Whenever active tenant changes, reset and re-initialize tenant state
                 LaunchedEffect(loggedInTenant) {
-                    loggedInTenant?.let {
-                        if (storeNameState.isEmpty()) {
-                            storeNameState = it.name
-                        }
-                        if (adminNameState.isEmpty()) {
-                            adminNameState = it.ownerName
-                        }
-                        adminUsers = adminUsers.map { user ->
-                            if (user["id"] == "1") {
-                                user + ("name" to it.ownerName)
-                            } else user
-                        }
+                    if (loggedInTenant == null) {
+                        storeNameState = ""
+                        adminNameState = ""
+                        globalProductsList = emptyList()
+                        globalTransactionsList = emptyList()
+                        branchesList = emptyList()
+                        areasListRaw = emptyList()
+                        adminUsers = emptyList()
+                    } else {
+                        val tenant = loggedInTenant!!
+                        storeNameState = tenant.name
+                        adminNameState = tenant.ownerName
+                        
+                        // Clear old memory lists to ensure no previous tenant data leaks
+                        globalProductsList = emptyList()
+                        globalTransactionsList = emptyList()
+                        branchesList = emptyList()
+                        areasListRaw = emptyList()
+                        adminUsers = emptyList()
+
+                        // Load tenant-isolated categories from SharedPreferences / Room DB
+                        val sharedPrefs = this@MainActivity.getSharedPreferences("app_session", android.content.Context.MODE_PRIVATE)
+                        val savedCategories = sharedPrefs.getStringSet("categories_list_${tenant.dbName}", null)?.toList()
+                        categoriesList = savedCategories ?: listOf("HP", "Aksesoris")
+
                         fetchGlobalData()
                     }
                 }
@@ -298,12 +394,11 @@ class MainActivity : ComponentActivity() {
                                                 onCategoriesListChange = { newCategories ->
                                                     categoriesList = newCategories
                                                     val sharedPrefs = this@MainActivity.getSharedPreferences("app_session", android.content.Context.MODE_PRIVATE)
-                                                    sharedPrefs.edit().putStringSet("categories_list", newCategories.toSet()).apply()
+                                                    sharedPrefs.edit().putStringSet("categories_list_${tenant.dbName}", newCategories.toSet()).apply()
                                                 },
 
                                                 onLogoutClick = {
-                                                    loggedInTenant = null
-                                                    currentScreen = AppScreen.Login
+                                                    performLogout()
                                                 },
                                                 onShowGuideClick = {
                                                     previousScreen = AppScreen.Dashboard
@@ -390,15 +485,14 @@ class MainActivity : ComponentActivity() {
                                                 onCategoriesListChange = { newCategories ->
                                                     categoriesList = newCategories
                                                     val sharedPrefs = this@MainActivity.getSharedPreferences("app_session", android.content.Context.MODE_PRIVATE)
-                                                    sharedPrefs.edit().putStringSet("categories_list", newCategories.toSet()).apply()
+                                                    sharedPrefs.edit().putStringSet("categories_list_${tenant.dbName}", newCategories.toSet()).apply()
                                                 },
                                                 
                                                 onBackClick = {
                                                     currentScreen = previousScreen
                                                 },
                                                 onLogoutClick = {
-                                                    loggedInTenant = null
-                                                    currentScreen = AppScreen.Login
+                                                    performLogout()
                                                 },
                                                 refreshData = {
                                                     fetchGlobalData()

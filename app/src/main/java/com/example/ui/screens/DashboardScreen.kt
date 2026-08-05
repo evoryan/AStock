@@ -911,6 +911,7 @@ fun DashboardScreen(
                                                                     item.id,
                                                                     StockUpdateRequest(tenant.dbName, item.stock - 1)
                                                                 )
+                                                                checkoutSuccessMessage = "✓ Stok ${item.name} berkurang menjadi ${item.stock - 1}"
                                                                 refreshData()
                                                             } catch (e: Exception) {
                                                                 dashboardError = "Gagal memperbarui stok: ${e.localizedMessage}"
@@ -946,6 +947,7 @@ fun DashboardScreen(
                                                                 item.id,
                                                                 StockUpdateRequest(tenant.dbName, item.stock + 1)
                                                             )
+                                                            checkoutSuccessMessage = "✓ Stok ${item.name} bertambah menjadi ${item.stock + 1}"
                                                             refreshData()
                                                         } catch (e: Exception) {
                                                             dashboardError = "Gagal memperbarui stok: ${e.localizedMessage}"
@@ -969,6 +971,7 @@ fun DashboardScreen(
                                                     coroutineScope.launch {
                                                         try {
                                                             ApiClient.getService().deleteProduct(item.id, tenant.dbName)
+                                                            checkoutSuccessMessage = "✓ Produk '${item.name}' berhasil dihapus!"
                                                             refreshData()
                                                         } catch (e: Exception) {
                                                             dashboardError = "Gagal menghapus produk: ${e.localizedMessage}"
@@ -1466,6 +1469,7 @@ fun DashboardScreen(
                                         )
                                     )
                                     if (response.isSuccessful && response.body()?.get("success") == true) {
+                                        val addedName = newProdName
                                         showAddProductModal = false
                                         newProdName = ""
                                         newProdSku = ""
@@ -1473,6 +1477,7 @@ fun DashboardScreen(
                                         newProdModal = ""
                                         newProdPrice = ""
                                         newProdStock = ""
+                                        checkoutSuccessMessage = "✓ Produk '$addedName' berhasil ditambahkan ke database!"
                                         refreshData()
                                     } else {
                                         addProductError = "Gagal menyimpan produk ke database VPS."
