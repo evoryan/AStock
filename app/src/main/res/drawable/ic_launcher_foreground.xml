@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 1. DROP SHADOW FOR LEFT LEG -->
+    <path
+        android:pathData="M28,84 L48,28 L60,28 L40,84 Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.3" />
+
+    <!-- 2. DROP SHADOW FOR RIGHT LEG -->
+    <path
+        android:pathData="M72,84 L52,28 L64,28 L84,84 Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.3" />
+
+    <!-- 3. DROP SHADOW FOR CHEVRON CROSSBAR -->
+    <path
+        android:pathData="M38,68 L56,52 L74,68 L70,72 L56,60 L42,72 Z"
+        android:fillColor="#000000"
+        android:fillAlpha="0.3" />
+
+    <!-- 4. RIGHT LEG (drawn slightly behind left leg if they overlap) -->
+    <path
+        android:pathData="M70,82 L50,26 L62,26 L82,82 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="50"
+                android:startY="26"
+                android:endX="82"
+                android:endY="82"
+                android:type="linear">
+                <item
+                    android:color="#F59E0B"
+                    android:offset="0.0" />
+                <item
+                    android:color="#B45309"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 5. CHEVRON CROSSBAR (bridges the legs) -->
+    <path
+        android:pathData="M36,66 L54,50 L72,66 L68,70 L54,58 L40,70 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="36"
+                android:startY="50"
+                android:endX="72"
+                android:endY="70"
+                android:type="linear">
+                <item
+                    android:color="#FBBF24"
+                    android:offset="0.0" />
+                <item
+                    android:color="#F59E0B"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 6. LEFT LEG (drawn on top of right leg at the peak overlap) -->
+    <path
+        android:pathData="M26,82 L46,26 L58,26 L38,82 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="46"
+                android:startY="26"
+                android:endX="38"
+                android:endY="82"
+                android:type="linear">
+                <item
+                    android:color="#FCD34D"
+                    android:offset="0.0" />
+                <item
+                    android:color="#D97706"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 7. SUBTLE LOGO GLOW / HIGHLIGHT (gives it a polished metallic reflectiveness) -->
+    <path
+        android:pathData="M46,26 L52,26 L32,82 L26,82 Z"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.15" />
+
+</vector>

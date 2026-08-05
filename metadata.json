@@ -1,0 +1,6 @@
+{
+  "name": "ASTOCK",
+  "description": "Aplikasi Manajemen Konter Multi Tenant Elegan untuk mengelola stok, transaksi, dan histori penjualan tenant secara dinamis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
