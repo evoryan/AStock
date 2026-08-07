@@ -47,7 +47,8 @@ object UpdateInstaller {
             }
 
             onProgress("Menghubungkan ke server repositori...")
-            var connection = URL(downloadUrl).openConnection() as HttpURLConnection
+            var targetUrl = downloadUrl
+            var connection = URL(targetUrl).openConnection() as HttpURLConnection
             connection.instanceFollowRedirects = true
             connection.connectTimeout = 15000
             connection.readTimeout = 15000
@@ -66,6 +67,51 @@ object UpdateInstaller {
                     connection.connect()
                     responseCode = connection.responseCode
                 }
+            }
+
+            // Fallback: If AStock returns 404, try lowercase astock
+            if (responseCode == HttpURLConnection.HTTP_NOT_FOUND && targetUrl.contains("AStock")) {
+                onProgress("Mencoba alternatif URL repositori (lowercase)...")
+                targetUrl = targetUrl.replace("AStock", "astock")
+                connection.disconnect()
+                connection = URL(targetUrl).openConnection() as HttpURLConnection
+                connection.instanceFollowRedirects = true
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+                connection.connect()
+                
+                responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == 307 || responseCode == 308) {
+                    val newUrl = connection.getHeaderField("Location")
+                    if (!newUrl.isNull_or_empty()) {
+                        connection.disconnect()
+                        connection = URL(newUrl).openConnection() as HttpURLConnection
+                        connection.instanceFollowRedirects = true
+                        connection.connectTimeout = 15000
+                        connection.readTimeout = 15000
+                        connection.connect()
+                        responseCode = connection.responseCode
+                    }
+                }
+            }
+
+            // Handle non-OK response codes (like 404, 403, etc.) gracefully without throwing a crash
+            if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                connection.disconnect()
+                return@withContext Pair(
+                    false,
+                    "❌ Gagal Update (Error 404): Berkas APK v1.2 tidak ditemukan di GitHub.\n\n" +
+                    "Kemungkinan Penyebab:\n" +
+                    "1. Repository 'satriaevo77/AStock' masih bersifat privat (ubah ke publik di Settings GitHub).\n" +
+                    "2. Belum ada rilis (Release) publik dengan tag rilis terbaru.\n" +
+                    "3. Nama berkas APK di aset rilis bukan 'app-release.apk'."
+                )
+            } else if (responseCode != HttpURLConnection.HTTP_OK) {
+                connection.disconnect()
+                return@withContext Pair(
+                    false,
+                    "❌ Error $responseCode: Gagal tersambung ke server GitHub untuk mengunduh pembaruan."
+                )
             }
 
             val fileLength = connection.contentLength

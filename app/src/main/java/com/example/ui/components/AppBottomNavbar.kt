@@ -33,16 +33,23 @@ fun AppBottomNavbar(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = Color(0xFF1E293B),
-            tonalElevation = 8.dp
+            tonalElevation = 12.dp
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 6.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column {
+                // Subtle premium top border line to separate navbar from content
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = Color.White.copy(alpha = 0.08f)
+                )
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .padding(horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 // Left Navigation Items
                 NavbarItem(
                     selected = currentScreen == AppScreen.Dashboard && dashboardTab == 1,
@@ -80,7 +87,8 @@ fun AppBottomNavbar(
                     tenantAccent = tenantAccent
                 )
             }
-        }
+            } // Close Column
+        } // Close Surface
 
         // Center Raised Scanner Floating Action Button (agak naik di tengah navbar)
         Box(

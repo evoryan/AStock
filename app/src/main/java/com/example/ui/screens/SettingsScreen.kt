@@ -1806,8 +1806,11 @@ fun SettingsScreen(
                             }
 
                             updateCheckedMessage?.let { msg ->
+                                val isError = msg.startsWith("❌") || msg.contains("Error")
                                 Card(
-                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF065F46)),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isError) Color(0xFF7F1D1D) else Color(0xFF065F46)
+                                    ),
                                     shape = RoundedCornerShape(8.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -1815,7 +1818,11 @@ fun SettingsScreen(
                                         modifier = Modifier.padding(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981))
+                                        Icon(
+                                            imageVector = if (isError) Icons.Default.Error else Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = if (isError) Color(0xFFEF4444) else Color(0xFF10B981)
+                                        )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(msg, color = Color.White, fontSize = 12.sp, lineHeight = 16.sp)
                                     }

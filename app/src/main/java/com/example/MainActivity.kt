@@ -275,7 +275,12 @@ class MainActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
+                            .padding(
+                                top = 0.dp,
+                                bottom = innerPadding.calculateBottomPadding(),
+                                start = innerPadding.calculateStartPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                                end = innerPadding.calculateEndPadding(androidx.compose.ui.unit.LayoutDirection.Ltr)
+                            )
                     ) {
                         // Main Page Content area
                         Box(
